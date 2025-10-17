@@ -12,6 +12,7 @@ class ControllerCliente:
         self.clientes.append(cliente)          # adiciona à lista
         self.proximo_id += 1                   # prepara o próximo ID
         print("✅ Cliente inserido com sucesso!")
+        return cliente # Retorna o objeto para que quem chamou possa usar/mostrar
 
     def listar(self):
         """Simula a listagem de clientes"""
@@ -20,7 +21,7 @@ class ControllerCliente:
             return
         print("\n📋 Lista de Clientes:")
         for c in self.clientes:
-            print(f"ID: {c.id_cliente} | Nome: {c.nome} | Email: {c.email} | Telefone: {c.telefone}")
+            print(f"ID: {c.id_cliente} | Nome: {c.nome} | Email: {c.email} | Telefone: {c.telefone} | Endereço: {c.endereco}")
 
     def remover(self, id_cliente):
         """Simula a remoção de um cliente"""
@@ -40,5 +41,5 @@ class ControllerCliente:
                 c.telefone = cliente.telefone
                 c.endereco = cliente.endereco
                 print("✏️ Cliente atualizado com sucesso!")
-                return
-        print("❌ Cliente não encontrado para atualização.")
+                return c
+        return None

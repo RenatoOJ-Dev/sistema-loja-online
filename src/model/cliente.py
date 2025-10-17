@@ -12,8 +12,8 @@ class Cliente:
         self.nome = nome
         self.email = email
         self.telefone = telefone
-        self.endereco - endereco
+        self.endereco = endereco
 
     # Esse método define como o cliente será exibido quando você der "print()"
     def __str__(self):
-        return f"[{self.id_cliente}] {self.nome} - {self.email}" f"Tel:{self.telefone} | Endereço: {self.endereco}"
+        return f"[{self.id_cliente}] Nome: {self.nome} - Email: {self.email} - Tel: {self.telefone} - Endereço: {self.endereco}"
