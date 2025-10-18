@@ -24,15 +24,17 @@ class ControllerProduto:
         for p in self.produtos:
             print(f"ID: {p.id_produto} | Nome: {p.nome} | Categoria: {p.categoria} | Preço: R${p.preco:.2f}")
 
-    def remover(self, id_produto):
-        """Remove um produto pelo ID"""
-        for p in self.produtos:
-            if p.id_produto == id_produto:
-                self.produtos.remove(p)
-                print("🗑️ Produto removido com sucesso!")
-                return
-        print("❌ Produto não encontrado.")
+    def remover(self, id_produto, pedidos=[]):
+        """Remove produto somente se não houver pedidos associados"""
+        for pedido in pedidos:
+            for item in pedido.itens:
+                if item.produto.id_produto == id_produto:
+                    print("❌ Não é possível remover este produto: ele está em um pedido.")
+                    return
 
+        self.produtos = [p for p in self.produtos if p.id_produto != id_produto]
+        print("✅ Produto removido com sucesso!")
+        
     def atualizar(self, produto: Produto):
         """Atualiza os dados de um produto"""
         for p in self.produtos:

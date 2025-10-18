@@ -23,14 +23,15 @@ class ControllerCliente:
         for c in self.clientes:
             print(f"ID: {c.id_cliente} | Nome: {c.nome} | Email: {c.email} | Telefone: {c.telefone} | Endereço: {c.endereco}")
 
-    def remover(self, id_cliente):
-        """Simula a remoção de um cliente"""
-        for c in self.clientes:
-            if c.id_cliente == id_cliente:
-                self.clientes.remove(c)
-                print("🗑️ Cliente removido com sucesso!")
+    def remover(self, id_cliente, pedidos=[]):
+        """Remove cliente somente se não houver pedidos associados"""
+        for pedido in pedidos:
+            if pedido.cliente.id_cliente == id_cliente:
+                print("❌ Não é possível remover este cliente: há pedidos vinculados a ele.")
                 return
-        print("❌ Cliente não encontrado.")
+
+        self.clientes = [c for c in self.clientes if c.id_cliente != id_cliente]
+        print("✅ Cliente removido com sucesso!")
 
     def atualizar(self, cliente: Cliente):
         """Simula a atualização de dados de um cliente"""
