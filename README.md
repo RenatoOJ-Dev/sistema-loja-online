@@ -125,4 +125,4 @@ Este repositório não contém uma licença explícita. Adicione um arquivo LICE
 
 ## Contato
 
-Para dúvidas ou sugestões, abra uma issue no repositório.
+Para dúvidas ou sugestões, abra uma issue no repositório..
