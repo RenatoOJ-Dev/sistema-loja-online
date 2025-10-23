@@ -1,47 +1,99 @@
-# src/controller/controller_produto.py
 
+from src.utils.conexao import Conexao
 from src.model.produto import Produto
 
 class ControllerProduto:
     def __init__(self):
-        # Lista que simula o banco de dados
-        self.produtos = []
-        self.proximo_id = 1  # Simula o autoincremento do banco
+        self.db = Conexao()
 
+    # ==============================
+    # INSERIR PRODUTO
+    # ==============================
     def inserir(self, produto: Produto):
-        """Simula a inserção de um produto"""
-        produto.id_produto = self.proximo_id
-        self.produtos.append(produto)
-        self.proximo_id += 1
-        print("✅ Produto inserido com sucesso!")
+        sql = """
+        INSERT INTO PRODUTO (Nome_Produto, Descricao, Preco, Estoque, Categoria, Data_Cadastro, Status_Produto, URL_Imagem)
+        VALUES (?, ?, ?, ?, ?, date('now'), ?, ?)
+        """
+        parametros = (
+            produto.nome,
+            produto.descricao,
+            produto.preco,
+            produto.estoque,
+            produto.categoria,
+            produto.status,
+            produto.url_imagem
+        )
 
+        try:
+            self.db.executar(sql, parametros, commit=True)
+            print("✅ Produto inserido com sucesso!")
+        except Exception as e:
+            print(f"❌ Erro ao inserir produto: {e}")
+
+    # ==============================
+    # LISTAR PRODUTOS
+    # ==============================
     def listar(self):
-        """Lista todos os produtos"""
-        if not self.produtos:
-            print("⚠️ Nenhum produto cadastrado.")
-            return
-        print("\n📦 Lista de Produtos:")
-        for p in self.produtos:
-            print(f"ID: {p.id_produto} | Nome: {p.nome} | Categoria: {p.categoria} | Preço: R${p.preco:.2f}")
+        sql = "SELECT ID_Produto, Nome_Produto, Preco, Estoque, Categoria FROM PRODUTO"
+        resultados = self.db.executar(sql, fetch=True)
 
-    def remover(self, id_produto, pedidos=[]):
-        """Remove produto somente se não houver pedidos associados"""
-        for pedido in pedidos:
-            for item in pedido.itens:
-                if item.produto.id_produto == id_produto:
-                    print("❌ Não é possível remover este produto: ele está em um pedido.")
-                    return
+        if resultados:
+            print("\n📦 Lista de Produtos:")
+            print("-" * 70)
+            for r in resultados:
+                print(f"ID: {r[0]} | Nome: {r[1]} | Preço: R${r[2]:.2f} | Estoque: {r[3]} | Categoria: {r[4]}")
+        else:
+            print("⚠️ Nenhum produto encontrado.")
 
-        self.produtos = [p for p in self.produtos if p.id_produto != id_produto]
-        print("✅ Produto removido com sucesso!")
-        
+    # ==============================
+    # ATUALIZAR PRODUTO
+    # ==============================
     def atualizar(self, produto: Produto):
-        """Atualiza os dados de um produto"""
-        for p in self.produtos:
-            if p.id_produto == produto.id_produto:
-                p.nome = produto.nome
-                p.categoria = produto.categoria
-                p.preco = produto.preco
-                print("✏️ Produto atualizado com sucesso!")
-                return
-        print("❌ Produto não encontrado para atualização.")
+        sql = """
+        UPDATE PRODUTO
+        SET Nome_Produto = ?, Descricao = ?, Preco = ?, Estoque = ?, Categoria = ?, Status_Produto = ?, URL_Imagem = ?
+        WHERE ID_Produto = ?
+        """
+        parametros = (
+            produto.nome,
+            produto.descricao,
+            produto.preco,
+            produto.estoque,
+            produto.categoria,
+            produto.status,
+            produto.url_imagem,
+            produto.id_produto
+        )
+        self.db.executar(sql, parametros, commit=True)
+        print("✅ Produto atualizado com sucesso!")
+
+    # ==============================
+    # REMOVER PRODUTO
+    # ==============================
+    def remover(self, id_produto):
+        sql_check = "SELECT * FROM PRODUTO WHERE ID_Produto = ?"
+        resultado = self.db.executar(sql_check, (id_produto,), fetch=True)
+
+        if not resultado:
+            print("⚠️ Produto não encontrado no banco de dados.")
+            return
+
+        sql_delete = "DELETE FROM PRODUTO WHERE ID_Produto = ?"
+        self.db.executar(sql_delete, (id_produto,), commit=True)
+        print("✅ Produto removido com sucesso!")
+
+    # ==============================
+    # BUSCAR PRODUTO POR ID
+    # ==============================
+    def buscar_por_id(self, id_produto):
+        sql = """
+        SELECT ID_Produto, Nome_Produto, Descricao, Preco, Estoque, Categoria, Status_Produto, URL_Imagem
+        FROM PRODUTO
+        WHERE ID_Produto = ?
+        """
+        resultado = self.db.executar(sql, (id_produto,), fetch=True)
+
+        if resultado:
+            r = resultado[0]
+            return Produto(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7])
+        return None

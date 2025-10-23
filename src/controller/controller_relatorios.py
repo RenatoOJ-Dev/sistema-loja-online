@@ -1,53 +1,97 @@
 # src/controller/controller_relatorios.py
+from src.utils.conexao import Conexao
 
 class ControllerRelatorios:
-    def __init__(self, controller_pedido):
-        # Recebe o controlador de pedidos, que contém a lista de pedidos
-        self.controller_pedido = controller_pedido
+    def __init__(self):
+        self.db = Conexao()
 
-    def vendas_por_cliente(self):
-        """Mostra o total de vendas de cada cliente."""
-        if not self.controller_pedido.pedidos:
-            print("⚠️ Nenhum pedido registrado.")
+    # 🔹 Relatório 1 — Total de pedidos por cliente
+    def relatorio_pedidos_por_cliente(self):
+        sql = """
+        SELECT 
+            C.Nome_Cliente,
+            P.ID_Pedido,
+            P.Data_Pedido,
+            P.Forma_Pagamento,
+            P.Endereco_Entrega,
+            P.Valor_Total
+        FROM PEDIDO P
+        INNER JOIN CLIENTE C ON P.ID_Cliente = C.ID_Cliente
+        ORDER BY C.Nome_Cliente, P.Data_Pedido DESC
+        """
+        pedidos = self.db.executar(sql, fetch=True)
+
+        if not pedidos:
+            print("⚠️ Nenhum pedido encontrado.")
             return
 
-        totais = {}
-        for pedido in self.controller_pedido.pedidos:
-            nome = pedido.cliente.nome
-            totais[nome] = totais.get(nome, 0) + pedido.total
+        print("\n📊 RELATÓRIO DE PEDIDOS POR CLIENTE")
+        print("=" * 80)
 
-        print("\n💰 Total de vendas por cliente:")
-        print("-----------------------------------")
-        for nome, total in totais.items():
-            print(f"{nome}: R${total:.2f}")
-        print("-----------------------------------")
+        for pedido in pedidos:
+            nome_cliente = pedido[0]
+            id_pedido = pedido[1]
+            data_pedido = pedido[2]
+            forma_pagamento = pedido[3]
+            endereco = pedido[4]
+            total = pedido[5]
 
-    def vendas_por_produto(self):
-        """Mostra o total vendido de cada produto."""
-        if not self.controller_pedido.pedidos:
-            print("⚠️ Nenhum pedido registrado.")
+            print(f"\n👤 Cliente: {nome_cliente}")
+            print(f"🧾 Pedido Nº {id_pedido} | Data: {data_pedido}")
+            print(f"💳 Pagamento: {forma_pagamento}")
+            print(f"📍 Endereço: {endereco}")
+            print(f"💰 Valor Total: R${total:.2f}")
+            print("🛒 Itens do Pedido:")
+
+        # Buscar itens do pedido
+            sql_itens = """
+            SELECT PR.Nome_Produto, I.Quantidade, I.Preco_Unitario, I.Subtotal
+            FROM ITENS_PEDIDO I
+            INNER JOIN PRODUTO PR ON I.ID_Produto = PR.ID_Produto
+            WHERE I.ID_Pedido = ?
+            """
+            itens = self.db.executar(sql_itens, (id_pedido,), fetch=True)
+
+            if itens:
+                for item in itens:
+                    nome_produto, qtd, preco, subtotal = item
+                    print(f"   - {nome_produto} | Qtd: {qtd} | Unitário: R${preco:.2f} | Subtotal: R${subtotal:.2f}")
+            else:
+                print("   ⚠️ Nenhum item registrado neste pedido.")
+
+            print("-" * 80)
+
+
+    # 🔹 Relatório 2 — Total de vendas por categoria de produto
+    def relatorio_vendas_por_categoria(self):
+        sql = """
+        SELECT 
+            PR.Categoria,
+            SUM(I.Quantidade) AS Total_Produtos_Vendidos,
+            SUM(I.Subtotal) AS Total_Vendas
+        FROM ITENS_PEDIDO I
+        INNER JOIN PRODUTO PR ON I.ID_Produto = PR.ID_Produto
+        GROUP BY PR.Categoria
+        ORDER BY Total_Vendas DESC
+        """
+        resultados = self.db.executar(sql, fetch=True)
+
+        if not resultados:
+            print("⚠️ Nenhuma venda encontrada.")
             return
 
-        totais = {}
-        for pedido in self.controller_pedido.pedidos:
-            for item in pedido.itens:
-                nome_produto = item.produto.nome
-                totais[nome_produto] = totais.get(nome_produto, 0) + item.quantidade
+        print("\n📈 RELATÓRIO DE VENDAS POR CATEGORIA")
+        print("=" * 80)
+        print(f"{'Categoria':<25} | {'Qtd Vendida':<15} | {'Total de Vendas (R$)':<20}")
+        print("-" * 80)
 
-        print("\n📦 Quantidade vendida por produto:")
-        print("-----------------------------------")
-        for nome, qtd in totais.items():
-            print(f"{nome}: {qtd} unidade(s)")
-        print("-----------------------------------")
+        total_geral = 0
 
-    def faturamento_total(self):
-        """Mostra o faturamento total da loja."""
-        if not self.controller_pedido.pedidos:
-            print("⚠️ Nenhum pedido registrado.")
-            return
+        for categoria, qtd_vendida, total_vendas in resultados:
+            total_geral += total_vendas
+            print(f"{categoria:<25} | {qtd_vendida:<15} | R${total_vendas:<20.2f}")
 
-        total = sum(p.total for p in self.controller_pedido.pedidos)
-        print("\n💵 Faturamento total da loja:")
-        print("-----------------------------------")
-        print(f"Total geral de vendas: R${total:.2f}")
-        print("-----------------------------------")
+        print("-" * 80)
+        print(f"{'TOTAL GERAL':<25} | {'':<15} | R${total_geral:<20.2f}")
+        print("=" * 80)
+

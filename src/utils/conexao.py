@@ -1,58 +1,57 @@
-# import psycopg2  # Biblioteca que permite conectar o Python ao PostgreSQL
+# src/utils/conexao.py
+import sqlite3
+import os
 
-# # Classe responsável por gerenciar a conexão e execução de comandos SQL
-# class Conexao:
-#     def __init__(self):
-#         # Quando a classe é criada, ainda não há conexão
-#         self.conn = None
-#         self.cursor = None
+class Conexao:
+    """Gerencia a conexão única com o banco SQLite."""
+    def __init__(self, nome_banco="loja.db"):
+        self.nome_banco = nome_banco
+        self._conexao = None
 
-#     def conectar(self):
-#         """Cria a conexão com o banco de dados"""
-#         try:
-#             # Aqui você coloca os dados do seu banco (ajuste a senha!)
-#             self.conn = psycopg2.connect(
-#                 dbname="loja_online",      # nome do banco criado no PostgreSQL
-#                 user="postgres",           # usuário padrão
-#                 password="sua_senha_aqui", # substitua pela sua senha
-#                 host="localhost",          # endereço do servidor (localhost = seu PC)
-#                 port="5432"                # porta padrão do PostgreSQL
-#             )
-#             self.cursor = self.conn.cursor()  # O cursor é quem executa os comandos SQL
-#         except Exception as e:
-#             print("Erro ao conectar ao banco:", e)
+    def conectar(self):
+        if self._conexao is None:
+            self._conexao = sqlite3.connect(self.nome_banco)
+        return self._conexao
 
-#     def desconectar(self):
-#         """Fecha a conexão e o cursor"""
-#         if self.cursor:
-#             self.cursor.close()
-#         if self.conn:
-#             self.conn.close()
+    def executar(self, sql, parametros=(), fetch=False, commit=False):
+        conexao = self.conectar()
+        try:
+            cursor = conexao.cursor()
+            cursor.execute(sql, parametros)
 
-#     def executar(self, sql, valores=None):
-#         """
-#         Executa comandos SQL que modificam o banco (INSERT, UPDATE, DELETE)
-#         """
-#         try:
-#             self.conectar()
-#             self.cursor.execute(sql, valores)
-#             self.conn.commit()  # salva as alterações
-#         except Exception as e:
-#             print("Erro ao executar comando SQL:", e)
-#             self.conn.rollback()  # desfaz alterações se der erro
-#         finally:
-#             self.desconectar()
+            if commit:
+                conexao.commit()
 
-#     def consultar(self, sql, valores=None):
-#         """
-#         Executa comandos SQL que buscam dados (SELECT)
-#         """
-#         try:
-#             self.conectar()
-#             self.cursor.execute(sql, valores)
-#             return self.cursor.fetchall()  # reto
-#         except Exception as e:
-#             print("Erro na consulta:", e)
-#             return []  # retorna lista vazia se der erro
-#         finally:
-#             self.desconectar()
+            if fetch:
+                return cursor.fetchall()
+
+        except sqlite3.Error as e:
+            print(f"❌ Erro ao executar SQL: {e}")
+
+    def fechar(self):
+        if self._conexao:
+            self._conexao.close()
+            self._conexao = None
+
+
+def criar_tabelas():
+    """Cria as tabelas do banco se ainda não existirem."""
+    caminho_script = os.path.join("scripts", "script.sql")
+
+    if not os.path.exists("loja.db"):
+        print("🧱 Criando banco de dados...")
+        conexao = sqlite3.connect("loja.db")
+        cursor = conexao.cursor()
+
+        if os.path.exists(caminho_script):
+            print(f"📄 Executando script SQL: {caminho_script}")
+            with open(caminho_script, "r", encoding="utf-8") as arquivo:
+                script = arquivo.read()
+                cursor.executescript(script)
+            conexao.commit()
+            conexao.close()
+            print("✅ Banco de dados criado com sucesso!")
+        else:
+            print(f"❌ ERRO: Arquivo {caminho_script} não encontrado.")
+    else:
+        print("ℹ️ Banco de dados já existe — nenhuma ação necessária.")
