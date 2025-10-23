@@ -2,21 +2,9 @@
 # SISTEMA DE LOJA ONLINE
 # ==========================
 
-from src.controller.controller_cliente import ControllerCliente
-from src.controller.controller_produto import ControllerProduto
-from src.controller.controller_pedido import ControllerPedido
-from src.controller.controller_relatorios import ControllerRelatorios
-from src.model.cliente import Cliente
-from src.model.produto import Produto
-from src.model.pedido import Pedido, ItemPedido
-from src.utils.splash_screen import splash_screen
-from src.utils.validadores import (
-    ler_telefone,
-    ler_numero_inteiro,
-    ler_numero_decimal,
-    formatar_telefone
-)
-from src.utils.conexao import criar_tabelas
+from src.controller import *
+from src.model import *
+from src.utils import *
 
 
 # ==========================
