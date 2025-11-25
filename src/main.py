@@ -1,10 +1,11 @@
 # ==========================
-# SISTEMA DE LOJA ONLINE
+# SISTEMA DE LOJA ONLINE — MongoDB
 # ==========================
 
 from src.controller import *
 from src.model import *
 from src.utils import *
+from src.utils.conexao import Conexao
 
 
 # ==========================
@@ -193,7 +194,7 @@ def criar_pedido(controller_pedido, controller_cliente, controller_produto):
     print("\n📦 Criando novo pedido...")
     controller_cliente.listar()
     id_cliente = int(input("\nDigite o ID do cliente: "))
-    # Exibir opções de pagamento
+    
     print("\n💳 Formas de pagamento disponíveis:")
     formas_pagamento = ["Dinheiro", "Cartão de Crédito", "Cartão de Débito", "Pix"]
     for i, forma in enumerate(formas_pagamento, start=1):
@@ -207,21 +208,23 @@ def criar_pedido(controller_pedido, controller_cliente, controller_produto):
         forma_pagamento = formas_pagamento[opcao_pagamento - 1]
 
     # Buscar endereço do cliente automaticamente
-    sql_endereco = "SELECT Endereco FROM CLIENTE WHERE ID_Cliente = ?"
-    resultado = controller_pedido.db.executar(sql_endereco, (id_cliente,), fetch=True)
-    if resultado and resultado[0][0]:
-        endereco = resultado[0][0]
+    cliente = controller_cliente.buscar_por_id(id_cliente)
+    if cliente and cliente.endereco:
+        endereco = cliente.endereco
         print(f"📍 Endereço de entrega: {endereco}")
     else:
         print("⚠️ Endereço não encontrado no cadastro do cliente.")
         endereco = input("Informe manualmente o endereço de entrega: ")
 
-
     pedido = Pedido(None, id_cliente, None, "Em aberto", 0.0, forma_pagamento, endereco)
     controller_pedido.inserir_pedido(pedido)
 
-    sql_ultimo_id = "SELECT MAX(ID_Pedido) FROM PEDIDO"
-    ultimo_id = controller_pedido.db.executar(sql_ultimo_id, fetch=True)[0][0]
+    # Recupera o ID gerado
+    ultimo_pedido = controller_pedido.buscar_ultimo()
+    if not ultimo_pedido:
+        print("❌ Falha ao recuperar ID do pedido.")
+        return
+    ultimo_id = ultimo_pedido.id_pedido
     total = 0.0
 
     while True:
@@ -231,24 +234,20 @@ def criar_pedido(controller_pedido, controller_cliente, controller_produto):
             break
 
         quantidade = int(input("Quantidade: "))
-        sql_preco = "SELECT Preco FROM PRODUTO WHERE ID_Produto = ?"
-        resultado = controller_pedido.db.executar(sql_preco, (id_produto,), fetch=True)
-        if not resultado:
+        produto = controller_produto.buscar_por_id(id_produto)
+        if not produto:
             print("❌ Produto não encontrado.")
             continue
 
-        preco_unitario = resultado[0][0]
+        preco_unitario = produto.preco
         subtotal = preco_unitario * quantidade
         total += subtotal
 
         item = ItemPedido(None, ultimo_id, id_produto, quantidade, preco_unitario, subtotal)
         controller_pedido.inserir_item(item)
 
-    controller_pedido.db.executar(
-        "UPDATE PEDIDO SET Valor_Total = ? WHERE ID_Pedido = ?",
-        (total, ultimo_id),
-        commit=True
-    )
+    # Atualiza valor total do pedido
+    controller_pedido.atualizar_valor_total(ultimo_id, total)
 
     print(f"\n✅ Pedido criado com sucesso! Valor total: R${total:.2f}")
 
@@ -275,9 +274,41 @@ def menu_relatorios(controller_relatorios):
 
 
 # ==========================
+# SPLASH SCREEN ATUALIZADA (MongoDB)
+# ==========================
+def splash_screen_mongodb():
+    db = Conexao()
+
+    qtd_clientes = db.count_documents("clientes")
+    qtd_produtos = db.count_documents("produtos")
+    qtd_pedidos = db.count_documents("pedidos")
+    qtd_itens = db.count_documents("itens_pedido")
+
+    print("\n" + "="*60)
+    print("        🎉 SISTEMA DE LOJA ONLINE — MongoDB 🎉")
+    print("="*60)
+    print(f"📌 Coleções e documentos:")
+    print(f"   • Clientes: {qtd_clientes} documento(s)")
+    print(f"   • Produtos: {qtd_produtos} documento(s)")
+    print(f"   • Pedidos:  {qtd_pedidos} documento(s)")
+    print(f"   • Itens:    {qtd_itens} documento(s)")
+    print()
+    print("👤 Desenvolvido por:")
+    print("   • Kaynan de Oliveira Barbosa")
+    print("   • Rafael Covre Vilque")
+    print("   • Ricardo Cardeais")
+    print("   • Renato Oliveira de Jesus")
+    print("   • Yuri Gabriel Amorim dos Santos")
+    print()
+    print("📚 Disciplina: Banco de Dados 2025/2")
+    print("👨‍🏫 Professor: Howard Roatti")
+    print("="*60 + "\n")
+
+
+# ==========================
 # EXECUÇÃO PRINCIPAL
 # ==========================
 if __name__ == "__main__":
-    criar_tabelas()
-    splash_screen()
+    # criar_tabelas()  # ❌ REMOVIDO — não se aplica ao MongoDB
+    splash_screen_mongodb()  # ✅ Nova splash com contagem — item 6.c do edital
     menu_principal()

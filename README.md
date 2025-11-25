@@ -126,3 +126,76 @@ Este repositório não contém uma licença explícita. Adicione um arquivo LICE
 ## Contato
 
 Para dúvidas ou sugestões, abra uma issue no repositório..
+
+# Novo modelo C3
+
+# 🛒 Sistema de Loja Online — MongoDB (C3)
+
+Projeto desenvolvido para a disciplina de Banco de Dados (2025/2), sob orientação do Prof. Howard Roatti. Implementa um sistema de loja online com CRUD + relatórios, utilizando MongoDB como banco de dados não relacional.
+
+> ✅ Projeto adaptado da C2 (SQLite) conforme orientação do edital (item 1).
+
+## 🧑‍💻 Integrantes
+- Kaynan de Oliveira Barbosa
+- Rafael Covre Vilque
+- Ricardo Cardeais
+- Renato Oliveira de Jesus
+- Yuri Gabriel Amorim dos Santos
+
+## 📦 Requisitos
+- Python 3.8+
+- MongoDB (local ou Atlas)
+- Biblioteca pymongo
+
+## ⚙️ Configuração (Linux)
+
+1. Clone o repositório
+git clone https://github.com/RenatoOJ-Dev/sistema-loja-online.git
+cd sistema-loja-online
+
+2. Crie e ative ambiente virtual (recomendado)
+python3 -m venv .venv
+source .venv/bin/activate
+
+3. Instale as dependências
+pip install pymongo
+
+4. Configure o MongoDB
+Opção A (MongoDB local):
+Instale o MongoDB Community e inicie o serviço:
+sudo systemctl start mongod
+
+Opção B (MongoDB Atlas):
+Edite src/utils/conexao.py e atualize a URI com sua string de conexão:
+URI = "mongodb+srv://<usuario>:<senha>@cluster0.xxxxx.mongodb.net/loja"
+
+5. Migre os dados (opcional, mas recomendado)
+Execute o script de migração para pré-cadastrar documentos:
+python3 src/scripts/sqlite_to_mongo.py
+Este script lê loja.db (SQLite) e insere os documentos nas coleções clientes, produtos, pedidos e itens_pedido.
+
+6. Execute a aplicação
+python3 -m src.main
+O sistema roda 100% no console, com interface amigável e menus intuitivos — atendendo ao edital.
+
+## 📁 Estrutura do Projeto
+src/
+├── controller/      # Controladores (Cliente, Produto, Pedido, Relatórios)
+├── model/           # Modelos de domínio (Cliente, Produto, Pedido, ItemPedido)
+├── utils/           # Conexão (MongoDB), validadores, splash screen
+├── scripts/         # Script de migração SQLite → MongoDB
+└── main.py          # Ponto de entrada
+
+## ✅ Funcionalidades Implementadas (conforme edital)
+
+Item do Edital | Implementação
+---------------|---------------
+6.b — Splash Screen com contagem de documentos | splash_screen_mongodb() mostra qtd. em clientes, produtos, pedidos, itens_pedido
+6.a.1.i — Relatório com agrupamento ($group) | relatorio_pedidos_por_cliente() → total de pedidos/valor por cliente (1,0 pt)
+6.a.1.ii — Relatório com junção ($lookup) | relatorio_vendas_por_categoria() → vendas por categoria (0,5 pt)
+6.c.5.i — Integridade referencial na exclusão | Ao excluir cliente/produto/pedido: verifica e remove documentos filhos (+0,5 pt)
+6.d.vii–viii — Atualização + exibição + repetição | atualizar() exibe registro atualizado e permite repetição (+0,5 pt)
+8.a.v — Documentação para Linux | Este README.md (+0,5 pt)
+
+
+📌 Observação: Este projeto é uma migração da C2 (SQLite) para MongoDB, conforme orientado no edital (item 1).
